@@ -40,6 +40,9 @@ class WorkerServer extends Worker {
         $this->shm = new SharedMemory(ftok(__FILE__, 'a'));
     }
 
+    /**
+     * 解析用户命令
+     */
     public function parseCommand()
     {
         global $argc, $argv;
@@ -64,19 +67,20 @@ class WorkerServer extends Worker {
         }
     }
 
-
+    /**
+     * 开启所有服务
+     */
     public function startServer()
     {
         $this->createSocket();
         $this->initRuntimeVars();
-
         $this->startAllWorkers();
     }
 
     public function startAllWorkers()
     {
         $this->createWorkers();
-        
+        $this->handleSignals();
     }
 
     public function createWorkers()
@@ -86,12 +90,11 @@ class WorkerServer extends Worker {
             if($pid == -1){
                 exit("pcntl_fork fail");
             }else if($pid == 0){
-//                $this->listen();
-                exit($pid);
+                $this->listen();
             }else{
                 $this->pids[] = $pid;
                 $this->shm->increment('workers');
-                if(count($this->pids) == $this->count) exit;
+                if(count($this->pids) == $this->count) return;
             }
         }
     }
@@ -105,6 +108,9 @@ class WorkerServer extends Worker {
         stream_set_blocking($this->stream, 0);
     }
 
+    /**
+     * 初始化运行时变量
+     */
     public function initRuntimeVars()
     {
         $this->shm->set('pid', 0);
@@ -113,6 +119,34 @@ class WorkerServer extends Worker {
         $this->shm->set('current_connections', 0);
         $this->shm->set('failed_connections', 0);
         $this->shm->set('total_connections', 0);
+    }
+
+    /**
+     * 销毁共享内存
+     */
+    public function destroySharedMemory() {
+        $this->shm->remove();
+    }
+
+
+
+    public function handleSignals() {
+        $this->initSignals();
+        $this->shm->set('pid', posix_getpid());
+        while(1) {
+            //开始分发
+            pcntl_signal_dispatch();
+        }
+    }
+
+    /**
+     * 注册信号和处理器
+     */
+    public function initSignals() {
+        pcntl_signal(SIGINT, array($this, 'signalHandler'));
+        pcntl_signal(SIGHUP, array($this, 'signalHandler'));
+        pcntl_signal(SIGUSR1, array($this, 'signalHandler'));
+        pcntl_signal(SIGCHLD, array($this, 'signalHandler'));
     }
 
     /**
@@ -128,7 +162,42 @@ class WorkerServer extends Worker {
         }
     }
 
+    /**
+     * 信号处理器
+     * @param $signal
+     */
+    public function signalHandler($signal) {
+        switch($signal) {
+            case SIGINT:
+            case SIGHUP:
+                // 停止信号
+                $this->stopServer();
+                $this->destroySharedMemory();
+                exit;
+                break;
+            case SIGUSR1:
+                $this->stopServer();
+                exit;
+                break;
+            case SIGCHLD:
+                //子进程结束时, 父进程会收到这个信号。
+                $pid = pcntl_wait($status, WNOHANG);
+                if($pid > 0) {
+                    foreach($this->pids as $key => $value) {
+                        if($value == $pid) {
+                            unset($this->pids[$key]);
+                        }
+                    }
+                }
+                // workers - 1
+                $this->shm->decrement('workers');
+                break;
+        }
+    }
 
+    /**
+     * 停止所有
+     */
     public function stopServer() {
         $this->stopAllWorkers();
         $this->emptyRuntimeVars();
@@ -136,6 +205,9 @@ class WorkerServer extends Worker {
     }
 
 
+    /**
+     * 结束所有进程
+     */
     public function stopAllWorkers() {
         foreach($this->pids as $pid) {
             exec("kill -9 $pid");
@@ -143,17 +215,20 @@ class WorkerServer extends Worker {
     }
 
     public function emptyRuntimeVars() {
-        $this->shm->del('pid');
-        $this->shm->del('start_at');
-        $this->shm->del('workers');
-        $this->shm->del('current_connections');
-        $this->shm->del('failed_connections');
-        $this->shm->del('total_connections');
+        $this->shm->delete('pid');
+        $this->shm->delete('start_at');
+        $this->shm->delete('workers');
+        $this->shm->delete('current_connections');
+        $this->shm->delete('failed_connections');
+        $this->shm->delete('total_connections');
     }
 
+    /**
+     * 关闭socket资源
+     */
     public function closeSocket() {
-        if(is_resource($this->socket)) {
-            fclose($this->socket);
+        if(is_resource($this->stream)) {
+            fclose($this->stream);
         }
     }
 

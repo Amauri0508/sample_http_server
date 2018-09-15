@@ -21,7 +21,7 @@ class Worker {
     }
 
     public function listen() {
-        echo 'listen';
+
     }
 
 
