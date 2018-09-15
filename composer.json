@@ -1,0 +1,24 @@
+{
+  "name": "AMAURI/sample_http_server",
+  "description": "简单的HTTP服务器,采用多进程+I/O复用",
+  "license": "MIT",
+  "keywords": ["socket", "http", "linux"],
+  "version": "1.0.0",
+  "authors": [
+    {
+      "name": "AMAURI",
+      "email": "18206218863@163.com"
+    }
+  ],
+
+  "require": {
+    "php": ">=5.5.0"
+  },
+
+  "autoload": {
+    "psr-4": {
+      "shs\\": "src"
+    }
+  }
+
+}
