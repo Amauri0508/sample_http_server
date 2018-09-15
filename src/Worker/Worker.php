@@ -20,7 +20,9 @@ class Worker {
         $this->port = $port;
     }
 
-
+    public function listen() {
+        echo 'listen';
+    }
 
 
 

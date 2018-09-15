@@ -1,9 +1,9 @@
 <?php
 namespace shs;
 
-use shs\Worker\Worker;
+use shs\Worker\WorkerServer;
 
-class HttpServer extends Worker {
+class HttpServer extends WorkerServer {
 
     public function __construct($ip, $port)
     {
