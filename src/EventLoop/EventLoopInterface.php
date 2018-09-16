@@ -64,10 +64,6 @@ interface EventLoopInterface {
      */
     function delete($fd, $flag);
 
-    /**
-     * clear all timed tasks
-     */
-    function clearAllTimer();
 
     /**
      * run the event loop
