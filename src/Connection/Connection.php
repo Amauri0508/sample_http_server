@@ -5,10 +5,11 @@ use shs\EventLoop\EventLoopInterface;
 
 class Connection implements ConnectionInterface{
 
-    public $socket;
+    public $stream;
+
     /**
      * 此连接所属的工作进程
-     * @var ServerInterface
+     * @var
      */
     public $server;
     /**
@@ -30,7 +31,6 @@ class Connection implements ConnectionInterface{
     protected $send_buffer = '';
 
     /**
-     * the send file handlers
      * @var array
      */
     protected $fds = [];
@@ -71,19 +71,18 @@ class Connection implements ConnectionInterface{
     public function __construct($server)
     {
         $this->server = $server;
-        $this->socket = @stream_socket_accept($this->server->socket, 5, $peername);
-        if(!$this->socket) {
+        $this->stream = @stream_socket_accept($this->server->stream, 5, $peername);
+        if(!$this->stream) {
             if(is_callable($this->server->onError)) {
                 call_user_func($this->server->onError, $this, "create connection to $peername failed."); exit;
             }
         }
-        stream_set_read_buffer($this->socket, 0);
+        stream_set_read_buffer($this->stream, 0);
         $this->connected_at = $this->last_recv_time = time();
     }
 
     /**
-     * called when the connection receive the client data
-     * cg\Socket\Handler\HttpHandler()->handleMessage(ConnectionInterface $connection)
+     * 接收客户端消息
      */
     public function handleMessage() {
         $this->server->handler->handleMessage($this);
@@ -105,7 +104,7 @@ class Connection implements ConnectionInterface{
             $len = strlen($buffer);
             $writeLen = 0;
             while($writeLen < $len) {
-                $data = @fwrite($this->socket, substr($buffer, $writeLen, 8192), 8192);
+                $data = @fwrite($this->stream, substr($buffer, $writeLen, 8192), 8192);
                 if($data === false) {
                     //return when the socket write buffer is empty
                     return $writeLen;
@@ -126,9 +125,9 @@ class Connection implements ConnectionInterface{
 
 
     /**
-     * send string to the client
+     * 将字符串发送到客户端
      * @param mixed $buffer
-     * @param bool $raw  whether encode the buffer before sending
+     * @param bool $raw
      */
     public function sendString($buffer, $raw = false) {
         if($buffer) {
@@ -136,13 +135,11 @@ class Connection implements ConnectionInterface{
                 $protocol = $this->server->protocol;
                 $buffer = $protocol::encode($buffer, $this);
             }
-
             $writeLen = $this->send($buffer, true);
             if($writeLen < strlen($buffer)) {
                 if($this->isSendBufferEmpty()) {
                     call_user_func(array($this, 'onSendBufferNotEmpty'));
                 }
-
                 $this->send_buffer .= substr($buffer, $writeLen);
             }
         }
@@ -160,20 +157,16 @@ class Connection implements ConnectionInterface{
     }
 
     /**
-     * close the connection
+     * 关闭连接
      */
     public function close() {
-        $this->server->shm->decrement('current_connections');
-
         $this->server->connections->detach($this);
-
-        $this->server->loop->delete($this->socket, EventInterface::EV_READ);
-
-        fclose($this->socket);
+        $this->server->loop->delete($this->stream, EventInterface::EV_READ);
+        fclose($this->stream);
     }
 
     /**
-     * whether the connection is timed out
+     * 连接超时
      * @return bool
      */
     public function timedOut() {
@@ -191,28 +184,23 @@ class Connection implements ConnectionInterface{
     }
 
     /**
-     * check whether the send buffer of the connection is empty
+     * 检查发送缓冲区是否为空
      * @return bool
      */
     public function isSendBufferEmpty() {
         if($this->send_buffer != '') {
             return false;
         }
-
         foreach($this->fds as $fd) {
             if(!feof($fd)) {
                 return false;
             }
         }
-
         return true;
     }
 
-    /**
-     * write the connection send buffer to the socket write buffer
-     */
+
     public function flushSendBuffer() {
-        //when the send buffer is empty, send the file content
         if($this->send_buffer == '') {
             foreach ($this->fds as $key => $fd) {
                 if (feof($fd)) {
@@ -220,7 +208,6 @@ class Connection implements ConnectionInterface{
                     unset($this->fds[$key]);
                     continue;
                 }
-
                 $this->send_buffer .= fread($fd, 8192);
                 break;
             }
@@ -239,14 +226,14 @@ class Connection implements ConnectionInterface{
      * 当发送缓冲区为空时调用
      */
     public function onSendBufferEmpty() {
-        $this->server->loop->delete($this->socket, EventLoopInterface::EV_WRITE);
+        $this->server->loop->delete($this->stream, EventLoopInterface::EV_WRITE);
     }
 
     /**
      * 当发送缓冲区不为空时调用
      */
     public function onSendBufferNotEmpty() {
-        $this->server->loop->add($this->socket, EventLoopInterface::EV_WRITE, array($this, 'flushSendBuffer'));
+        $this->server->loop->add($this->stream, EventLoopInterface::EV_WRITE, array($this, 'flushSendBuffer'));
     }
 
     /**
@@ -257,20 +244,19 @@ class Connection implements ConnectionInterface{
         if($this->isSendBufferEmpty()) {
             call_user_func(array($this, 'onSendBufferNotEmpty'));
         }
-
         $this->fds[] = $fd;
     }
 
     /**
-     * get the client address, including IP and port
+     * 获取客户端地址，包括IP和端口
      * @return string
      */
     public function getRemoteAddress() {
-        return stream_socket_get_name($this->socket, true);
+        return stream_socket_get_name($this->stream, true);
     }
 
     /**
-     * get the client IP
+     * 获取客户端IP
      * @return string
      */
     public function getRemoteIp() {
@@ -278,7 +264,7 @@ class Connection implements ConnectionInterface{
     }
 
     /**
-     * get the client port
+     * 获取客户端端口
      * @return string
      */
     public function getRemotePort() {

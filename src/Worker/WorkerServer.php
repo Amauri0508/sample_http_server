@@ -114,11 +114,7 @@ class WorkerServer extends Worker {
     public function initRuntimeVars()
     {
         $this->shm->set('pid', 0);
-        $this->shm->set('start_at', time());
         $this->shm->set('workers', 0);
-        $this->shm->set('current_connections', 0);
-        $this->shm->set('failed_connections', 0);
-        $this->shm->set('total_connections', 0);
     }
 
     /**
@@ -127,8 +123,6 @@ class WorkerServer extends Worker {
     public function destroySharedMemory() {
         $this->shm->remove();
     }
-
-
 
     public function handleSignals() {
         $this->initSignals();
@@ -216,11 +210,7 @@ class WorkerServer extends Worker {
 
     public function emptyRuntimeVars() {
         $this->shm->delete('pid');
-        $this->shm->delete('start_at');
         $this->shm->delete('workers');
-        $this->shm->delete('current_connections');
-        $this->shm->delete('failed_connections');
-        $this->shm->delete('total_connections');
     }
 
     /**
