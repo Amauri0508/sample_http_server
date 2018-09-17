@@ -2,7 +2,7 @@
 namespace shs;
 
 use shs\Worker\WorkerServer;
-use shs\Protocol;
+use shs\Protocol\HttpProtocol;
 
 class HttpServer extends WorkerServer {
 
