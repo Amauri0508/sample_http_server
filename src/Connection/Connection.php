@@ -41,28 +41,12 @@ class Connection implements ConnectionInterface{
      */
     public $current_package_size;
 
-    /**
-     * the connection lifetime
-     * @var int
-     */
     public $timeout = 0;
 
-    /**
-     * the max requests
-     * @var int
-     */
     public $max_requests = 0;
 
-    /**
-     * the current requests accepted
-     * @var int
-     */
     public $requests = 0;
 
-    /**
-     * the timestamp when the connection was created
-     * @var int
-     */
     protected $connected_at;
 
     protected $last_recv_time;
@@ -89,10 +73,7 @@ class Connection implements ConnectionInterface{
     }
 
     /**
-     * send message to the client
-     * @param sting buffer
-     * @param string $raw  whether encode the buffer with the protocol
-     * @return int the length of send data
+     * 向客户端发送消息
      */
     public function send($buffer, $raw = false) {
         if($buffer) {
@@ -106,10 +87,8 @@ class Connection implements ConnectionInterface{
             while($writeLen < $len) {
                 $data = @fwrite($this->stream, substr($buffer, $writeLen, 8192), 8192);
                 if($data === false) {
-                    //return when the socket write buffer is empty
                     return $writeLen;
                 } else if($data === 0) {
-                    //close the socket when the client socket is closed
                     $this->close();
                     return $writeLen;
                 }
@@ -145,10 +124,6 @@ class Connection implements ConnectionInterface{
         }
     }
 
-    /**
-     * whether the connection has processed too many requests
-     * @return bool
-     */
     public function tooManyRequests() {
         if($this->max_requests > 0 && $this->requests >= $this->max_requests) {
             return true;

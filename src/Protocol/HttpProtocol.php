@@ -57,13 +57,13 @@ class HttpProtocol implements ProtocolInterface {
     public static function input($buffer, ConnectionInterface $connection) {
 
         if(($pos = strpos($buffer, "\r\n\r\n")) !== false) {
-            //validate the request
+            //请求验证
             if(!self::validateRequest($buffer)) {
                 echo '400 Bad Request';
             }
 
             $header_string = substr($buffer, 0, $pos);
-            //get the body length
+            //获得请求请求体长度
             $result = preg_match('/Content-Length\: (\d*)(?:\r\n)?/i', $header_string, $matches);
             if($result) {
                 $body_len = $matches[1];
@@ -71,10 +71,8 @@ class HttpProtocol implements ProtocolInterface {
                 $body_len = 0;
             }
 
-            //the request length
             $request_len = $pos + 4 + $body_len;
 
-            //if the buffer is shorter than the request, wait for more data
             if($request_len > strlen($buffer)) {
                 return 0;
             } else {
@@ -101,14 +99,14 @@ class HttpProtocol implements ProtocolInterface {
         $header_string = substr($buffer, 0, $pos);
         $body = strval(substr($buffer, $pos+4));
 
-        //parse the header
+        //解析header
         $headers = self::parseHeader($header_string);
 
         return new HttpMessage($headers, $body);
     }
 
     /**
-     * validate the http request
+     * 验证http请求
      * @param string $request
      * @return bool
      */
