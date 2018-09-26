@@ -17,9 +17,22 @@ class Worker {
     public $onError;
     public $connections;
 
+    /**
+     * 事件循环
+     * @var LibEventLoop
+     */
     public $loop;
+
+    /**
+     * HTTP操作
+     */
     public $handler;
 
+    /**
+     * Worker constructor.
+     * @param $ip
+     * @param $port
+     */
     public function __construct($ip, $port) {
         $this->ip = $ip;
         $this->port = $port;
@@ -32,6 +45,9 @@ class Worker {
         $this->loop->run();
     }
 
+    /**
+     * 客户端连接操作
+     */
     public function handleConnection() {
         try {
             $connection = $this->createConnection();
@@ -43,6 +59,10 @@ class Worker {
         $this->loop->add($connection->stream, EventLoopInterface::EV_READ, array($connection, 'handleMessage'));
     }
 
+    /**
+     * 创建客户端连接对象
+     * @return Connection
+     */
     private function createConnection() {
         return new Connection($this);
     }

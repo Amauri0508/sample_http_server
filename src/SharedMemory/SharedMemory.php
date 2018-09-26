@@ -1,18 +1,20 @@
 <?php
-
+/**
+ * 共享内存
+ */
 namespace shs\SharedMemory;
 
 class SharedMemory {
     /**
-     * the shared memory segment identifier
+     * 共享内存标识符
      * @var resource
      */
     protected $shm;
 
-    //the semaphore identifier
+    //信号量标识符
     protected $sem;
 
-    //whether runs in transaction
+    //是否在事物中
     protected $in_transaction;
 
     protected $writingKey = 'ECapAKs62nogg28a';
@@ -33,11 +35,6 @@ class SharedMemory {
         $this->in_transaction = false;
     }
 
-    /**
-     * get the stored vlaue
-     * @param string $key
-     * @return mixed  return the value with the given key or false on failure
-     */
     public function get($key) {
         //如果在事务中调用此函数，则锁机制交由事务来处理
         if(!$this->in_transaction) {
@@ -47,7 +44,6 @@ class SharedMemory {
                     @sem_release($this->sem);
                     continue;
                 }
-
                 break;
             }
         }
@@ -61,14 +57,8 @@ class SharedMemory {
         return $value;
     }
 
-    /**
-     * set the value
-     * @param string $key
-     * @param mixed $value  new value
-     * @return bool  return true on success, and false on failure
-     */
     public function set($key, $value) {
-        //the transaction will acquire a mutex, so needn't acquired the mutex when called in a transaction
+        //事务将获取互斥锁，因此在事务中调用时无需获取锁
         if(!$this->in_transaction) {
             sem_acquire($this->sem);
             shm_put_var($this->shm, crc32($this->writingKey), true);
@@ -84,13 +74,8 @@ class SharedMemory {
         return $result;
     }
 
-    /**
-     * delete the key
-     * @param string $key
-     * @return bool  return true on success and false on failure
-     */
+
     public function delete($key) {
-        //the transaction will acquire a mutex, so needn't acquired the mutex when called in a transaction
         if(!$this->in_transaction) {
             sem_acquire($this->sem);
             shm_put_var($this->shm, crc32($this->writingKey), true);
@@ -107,9 +92,9 @@ class SharedMemory {
     }
 
     /**
-     * begin a transaction. A transaction is atomic and concurrency-safe
+     * 开始事务  原子和并发安全
      * @param callable $callback
-     * @return mixed  return the result of the callback parameter
+     * @return mixed  返回回调的结果
      */
     public function transction($callback) {
         sem_acquire($this->sem);
@@ -126,10 +111,7 @@ class SharedMemory {
     }
 
     /**
-     * increase the value
-     * @param string $key
-     * @param int $by  increment, decrease the value when this parameter is negative
-     * @return bool  return true on success. when the original value is not a integer, return false
+     * 自增值
      */
     public function increment($key, $by = 1) {
         return $this->transction(function($sm) use($key, $by) {
@@ -144,10 +126,7 @@ class SharedMemory {
     }
 
     /**
-     * decrease the value
-     * @param string $key
-     * @param int $by  decrement, increase the value when this parameter is negative
-     * @return bool  return true on success. when the original value is not a integer, return false
+     * 自减
      */
     public function decrement($key, $by = 1) {
         return $this->transction(function($sm) use($key, $by) {
@@ -162,7 +141,7 @@ class SharedMemory {
     }
 
     /**
-     * release the shared memory
+     * 释放共享内存
      */
     public function remove() {
         shm_remove($this->shm);

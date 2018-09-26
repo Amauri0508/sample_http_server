@@ -24,7 +24,9 @@ class WorkerServer extends Worker {
      */
     public $shm;
 
-
+    /**
+     * 开启所有服务
+     */
     public function run()
     {
         self::checkEnv();
@@ -83,6 +85,9 @@ class WorkerServer extends Worker {
         $this->handleSignals();
     }
 
+    /**
+     * 创建工作子进程
+     */
     public function createWorkers()
     {
         while (count($this->pids) < $this->count){
@@ -124,6 +129,9 @@ class WorkerServer extends Worker {
         $this->shm->remove();
     }
 
+    /**
+     * 注册信号
+     */
     public function handleSignals() {
         $this->initSignals();
         $this->shm->set('pid', posix_getpid());
@@ -208,6 +216,9 @@ class WorkerServer extends Worker {
         }
     }
 
+    /**
+     * 清空运行时变量
+     */
     public function emptyRuntimeVars() {
         $this->shm->delete('pid');
         $this->shm->delete('workers');
