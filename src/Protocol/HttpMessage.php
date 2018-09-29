@@ -17,9 +17,11 @@ class HttpMessage implements ArrayAccess {
         $this->headers = $headers;
         $this->body = $body;
     }
+
     public function headers()  {
         return $this->headers;
     }
+
     public function header($name, $value = null) {
         if(!is_null($value)) {
             $this->headers[$name] = $value;
@@ -27,6 +29,7 @@ class HttpMessage implements ArrayAccess {
 
         return isset($this->headers[$name]) ? $this->headers[$name] : null;
     }
+
     public function body($value = null) {
         if(!is_null($value)) {
             $this->body = $value;
@@ -42,6 +45,7 @@ class HttpMessage implements ArrayAccess {
     public function offsetGet($offset) {
         return isset($this->headers[$offset]) ? $this->headers[$offset] : null;
     }
+
     public function offsetSet($offset, $value) {
         if (is_null($offset)) {
             $this->headers[] = $value;

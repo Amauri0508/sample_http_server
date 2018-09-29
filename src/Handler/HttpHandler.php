@@ -9,5 +9,8 @@ use shs\Protocol\HttpProtocol;
 
 class HttpHandler {
 
+    public function handleMessage(ConnectionInterface $connection) {
 
+
+    }
 }
