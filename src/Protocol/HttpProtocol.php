@@ -99,7 +99,6 @@ class HttpProtocol implements ProtocolInterface {
         $header_string = substr($buffer, 0, $pos);
         $body = strval(substr($buffer, $pos+4));
 
-        //解析header
         $headers = self::parseHeader($header_string);
 
         return new HttpMessage($headers, $body);
@@ -116,6 +115,11 @@ class HttpProtocol implements ProtocolInterface {
         return preg_match($pattern, $request);
     }
 
+    /**
+     * 解析header
+     * @param $header
+     * @return array
+     */
     protected static function parseHeader($header) {
         $headers = array();
         $header_lines = explode("\r\n", $header);
