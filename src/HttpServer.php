@@ -19,6 +19,8 @@ class HttpServer extends WorkerServer {
      */
     protected $methods = ['GET', 'POST', 'HEAD', 'OPTIONS'];
 
+    public $hosts = array();
+
     public function __construct($ip, $port)
     {
         parent::__construct($ip, $port);
@@ -26,8 +28,24 @@ class HttpServer extends WorkerServer {
     }
 
 
+    /**
+     * 获取允许的请求方法
+     * @return array
+     */
     public function allowedMethods() {
         return $this->methods;
     }
 
+    /**
+     * 虚拟主机配置
+     * @param $host
+     * @return array|mixed
+     */
+    public function getHostConfig($host) {
+        if(empty($host)) {
+            return isset($this->hosts['default']) ? $this->hosts['default'] : [];
+        }
+
+        return isset($this->hosts[$host]) ? $this->hosts[$host] : (isset($this->hosts['default']) ? $this->hosts['default'] : []);
+    }
 }

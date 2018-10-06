@@ -43,92 +43,42 @@ class HttpHandler {
                 }
                 if(!in_array($http_message['Method'], $connection->server->allowedMethods())) {
                     // 405
-                    $this->methodNotAllowed($connection, $http_message);
+                    (new HttpCodeResponder($connection, $http_message))->sendCodeResp('405');
                     return;
                 }
 
                 switch($http_message['Method']) {
                     case 'HEAD':
                     case 'GET':
-                        print_r($http_message);exit;
+                        $rangeResponder = new RangeResponder;
+                        $fileResponder = new FileResponder;
+                        $rangeResponder->setNextResponder($fileResponder);
+
+                        $chainOfResponder = $rangeResponder;
+                        $onlyHeader = false;
+                        if($http_message['Method'] == 'HEAD') {
+                            $onlyHeader = true;
+                        }
+                        $chainOfResponder->respond($http_message, $connection, $onlyHeader);
                         break;
                     case 'POST':
                         break;
                     case 'OPTIONS':
-                        $optionsResponse = new HttpMessage([
-                            'Code' => '200',
-                            'Status' => HttpProtocol::$status['200'],
-                            'Version' => $http_message['Version'],
-                            'Date' => date('D, d m Y H:i:s e'),
-                            'Allow' => implode(', ', $connection->server->allowedMethods())
-                        ], '');
-                        $connection->sendString($optionsResponse);
+                        (new HttpCodeResponder($connection, $http_message))->sendCodeResp('o200');
                         break;
                     default:
-                        $this->methodNotAllowed($connection, $http_message);
+                        (new HttpCodeResponder($connection, $http_message))->sendCodeResp('405');
                 }
 
-                if (!empty($connection->recv_buffer)) {
-                    call_user_func(array($connection, 'handleMessage'));
-                }
+//                if (!empty($connection->recv_buffer)) {
+//                    call_user_func(array($connection, 'handleMessage'));
+//                }
             }
         } catch(\Exception $e) {
             // 400
-            $this->badRequest($connection);
+            (new HttpCodeResponder($connection, $http_message))->sendCodeResp('400');
             $connection->close();
         }
-    }
-
-
-    /**
-     * 请求不允许
-     * @param $connection
-     * @param $http_message
-     */
-    private function methodNotAllowed($connection, $http_message)
-    {
-        $body = <<<EOF
-<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML 2.0//EN">
-<html><head>
-<title>405 Method Not Allowed</title>
-</head><body>
-<h1>Method Not Allowed</h1>
-</body></html>
-EOF;
-        $methodNotAllowedResponse = new HttpMessage([
-            'Code' => '405',
-            'Status' => HttpProtocol::$status['405'],
-            'Version' => $http_message['Version'],
-            'Content-Type' => 'text/html',
-            'Content-Length' => strlen($body),
-            'Date' => date('D, d m Y H:i:s e')
-        ], $body);
-        $connection->sendString($methodNotAllowedResponse);
-    }
-
-    /**
-     * 请求错误
-     * @param $connection
-     */
-    private function badRequest($connection)
-    {
-        $body = <<<EOF
-<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML 2.0//EN">
-<html><head>
-<title>400 Bad Request</title>
-</head><body>
-<h1>Bad Request</h1>
-</body></html>
-EOF;
-        $badRequestResponse = new HttpMessage([
-            'Code' => '400',
-            'Status' => HttpProtocol::$status['400'],
-            'Version' => 'HTTP/1.1',
-            'Content-Type' => 'text/html',
-            'Content-Length' => strlen($body),
-            'Date' => date('D, d m Y H:i:s e')
-        ], $body);
-        $connection->sendString($badRequestResponse);
     }
 
 
