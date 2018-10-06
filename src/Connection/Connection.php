@@ -12,6 +12,7 @@ class Connection implements ConnectionInterface{
      * @var
      */
     public $server;
+
     /**
      * 接收缓冲
      * @var string
