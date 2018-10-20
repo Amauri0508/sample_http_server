@@ -34,6 +34,7 @@ class Worker {
      * @param $port
      */
     public function __construct($ip, $port) {
+        date_default_timezone_set('PRC');
         $this->ip = $ip;
         $this->port = $port;
         $this->loop = new LibEventLoop();

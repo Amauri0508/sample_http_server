@@ -23,6 +23,17 @@ class WorkerServer extends Worker {
      * @var resource
      */
     public $shm;
+    /**
+     * 是否以守护进程方式启动
+     * @var bool
+     */
+    public $deamon = false;
+
+    /**
+     * 守护进程模式日志打印到这个文件
+     * @var
+     */
+    public $std_output;
 
     /**
      * 开启所有服务
@@ -76,8 +87,60 @@ class WorkerServer extends Worker {
     {
         $this->createSocket();
         $this->initRuntimeVars();
+        if($this->deamon) {
+            $this->deamonize();
+        }
         $this->startAllWorkers();
     }
+
+    /**
+     * 开启守护进程
+     */
+    public function deamonize() {
+        $pid = pcntl_fork();
+        if($pid < 0) {
+            exit("pcntl_fork() failed\r\n");
+        } else if($pid > 0) {
+            exit(0);
+        } else {
+            $sid = posix_setsid();
+            if($sid < 0) {
+                exit("deamon failed\r\n");
+            }
+            umask(0);
+            $pid = pcntl_fork();
+            if($pid < 0) {
+                exit("pcntl_fork() failed\r\n");
+            } else if($pid > 0) {
+                exit(0);
+            }
+            $this->resetStd();
+        }
+    }
+
+    /**
+     * 重定向标准输出
+     */
+    protected function resetStd()
+    {
+        global $STDOUT, $STDERR;
+        if($this->std_output) {
+            $output = str_replace(array('{YY}', '{MM}', '{DD}'), array(date('Y'), date('m'), date('d')), $this->std_output);
+        } else {
+            $output = dirname(__FILE__).'/../../'.'output_'.date('Ymd').'.txt';
+        }
+        $handle = fopen($output, "a");
+        if ($handle) {
+            unset($handle);
+            @fclose(STDOUT);
+            @fclose(STDERR);
+            $STDOUT = fopen($output, "a");
+            $STDERR = fopen($output, "a");
+        } else {
+            throw new \Exception('can not open stdOutput file '.$output);
+        }
+    }
+
 
     public function startAllWorkers()
     {
