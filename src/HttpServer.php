@@ -18,7 +18,10 @@ class HttpServer extends WorkerServer {
      * @var array
      */
     protected $methods = ['GET', 'POST', 'HEAD', 'OPTIONS'];
-
+    /**
+     * 配置虚拟主机根目录
+     * @var array
+     */
     public $hosts = array();
 
     public function __construct($ip, $port)
@@ -45,7 +48,6 @@ class HttpServer extends WorkerServer {
         if(empty($host)) {
             return isset($this->hosts['default']) ? $this->hosts['default'] : [];
         }
-
         return isset($this->hosts[$host]) ? $this->hosts[$host] : (isset($this->hosts['default']) ? $this->hosts['default'] : []);
     }
 }

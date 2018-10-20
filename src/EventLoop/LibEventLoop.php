@@ -12,6 +12,9 @@ class LibEventLoop implements EventLoopInterface{
     private $signals;
 
     public function __construct() {
+        if(!function_exists('event_base_new')){
+            exit("Not installed Libevent\n");
+        }
         $this->base = event_base_new();
     }
 
