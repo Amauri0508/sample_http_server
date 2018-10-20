@@ -70,7 +70,7 @@ class WorkerServer extends Worker {
                 $this->startServer();
                 break;
             case 'stop' :
-                if($this->isRunning()){
+                if(!$this->isRunning()){
                     exit("The server is not running" . PHP_EOL);
                 }
                 $this->stopServer();
@@ -101,8 +101,9 @@ class WorkerServer extends Worker {
         if($pid < 0) {
             exit("pcntl_fork() failed\r\n");
         } else if($pid > 0) {
-            exit(0);
+            exit(0); // 结束父进程，子进程继续
         } else {
+            // 使子进程成为会话组长
             $sid = posix_setsid();
             if($sid < 0) {
                 exit("deamon failed\r\n");
@@ -112,7 +113,7 @@ class WorkerServer extends Worker {
             if($pid < 0) {
                 exit("pcntl_fork() failed\r\n");
             } else if($pid > 0) {
-                exit(0);
+                exit(0); // 结束第一子进程，第二子进程继续
             }
             $this->resetStd();
         }
@@ -160,7 +161,7 @@ class WorkerServer extends Worker {
             }else if($pid == 0){
                 $this->listen();
             }else{
-                $this->pids[] = $pid;
+                array_push($this->pids, $pid);
                 $this->shm->increment('workers');
                 if(count($this->pids) == $this->count) return;
             }
@@ -247,6 +248,7 @@ class WorkerServer extends Worker {
             case SIGCHLD:
                 //子进程结束时, 父进程会收到这个信号。
                 $pid = pcntl_wait($status, WNOHANG);
+                echo '$pid' . $pid . PHP_EOL;
                 if($pid > 0) {
                     foreach($this->pids as $key => $value) {
                         if($value == $pid) {
@@ -254,6 +256,7 @@ class WorkerServer extends Worker {
                         }
                     }
                 }
+                print_r($this->pids);
                 // workers - 1
                 $this->shm->decrement('workers');
                 break;

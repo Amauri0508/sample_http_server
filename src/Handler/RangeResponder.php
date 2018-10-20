@@ -5,7 +5,7 @@ use shs\Protocol\HttpProtocol;
 use shs\Protocol\HttpMessage;
 use shs\Connection\ConnectionInterface;
 
-class RangeResponder {
+class RangeResponder extends AbstractResponder {
     public function respond(HttpMessage $message, ConnectionInterface $connection, $onlyHeader = false) {
 
         if(empty($message['Range'])) {

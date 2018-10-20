@@ -24,13 +24,38 @@ class HttpServer extends WorkerServer {
      */
     public $hosts = array();
 
+    protected $mimes = [
+        'js' => 'application/javascript',
+        'json' => 'application/json',
+        'xml' => 'application/xml',
+        'dtd' => 'application/xml-dtd',
+        'xhtml' => 'application/xhtml+xml',
+        'bmp' => 'application/x-bmp',
+        'html' => 'text/html',
+        'php' => 'text/html',
+        'htm' => 'text/html',
+        'img' => 'application/x-img',
+        'jpe' => 'image/jpeg',
+        'jpeg' => 'image/jpeg',
+        'jpg' => 'image/jpeg',
+        'png' => 'image/png',
+        'gif' => 'image/gif',
+        'tif' => 'image/tiff',
+        'tiff' => 'image/tiff'
+    ];
+
     public function __construct($ip, $port)
     {
         parent::__construct($ip, $port);
         $this->handler = new HttpHandler();
     }
 
-
+    public function getMimeType($ext) {
+        if(empty($this->mimes[$ext])) {
+            return 'application/octet-stream';
+        }
+        return $this->mimes[$ext];
+    }
     /**
      * 获取允许的请求方法
      * @return array

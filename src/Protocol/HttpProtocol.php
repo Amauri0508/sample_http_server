@@ -90,9 +90,9 @@ class HttpProtocol implements ProtocolInterface {
                 $respond .= "$name: $value\r\n";
             }
         }
-
         return "$respond\r\n".$original->body();
     }
+
 
     public static function decode($buffer, ConnectionInterface $connection) {
         $pos = strpos($buffer, "\r\n\r\n");

@@ -7,20 +7,18 @@ use shs\Connection\ConnectionInterface;
 
 class FileResponder extends AbstractResponder {
     public function respond(HttpMessage $message, ConnectionInterface $connection, $onlyHeader = false) {
-        //get the host configuration
         $host_config = $connection->server->getHostConfig($message['Host']);
         if(empty($host_config)) {
             echo "You haven't configure the hosts yet.\r\n";
             return;
         }
 
-        //get the request file path
         $uri = $message['Uri'];
         @list($request_file, $query_string) = explode('?', $uri);
         $request_file = rtrim($host_config['root'], '/').'/'.ltrim($request_file, '/.');
 
-        //if the file does not exists, send 404 not found respond
         if(!file_exists($request_file)) {
+            //文件不存在
             (new HttpCodeResponder($connection, $message))->sendCodeResp('404');
 
         } else {
@@ -47,10 +45,8 @@ class FileResponder extends AbstractResponder {
                 (new HttpCodeResponder($connection, $message))->sendCodeResp('403');
             } else {
                 $ext = pathinfo($request_file, PATHINFO_EXTENSION);
-                //get the mime type
                 $mime = $connection->server->getMimeType($ext);
 
-                //send the header first
                 $response = new HttpMessage([
                     'Code' => '200',
                     'Status' => HttpProtocol::$status['200'],
@@ -63,7 +59,6 @@ class FileResponder extends AbstractResponder {
                 $connection->sendString($response);
 
                 if ($onlyHeader == false) {
-                    //send the body
                     $fd = fopen($request_file, 'rb');
                     if (!$fd) {
                         $connection->close();
