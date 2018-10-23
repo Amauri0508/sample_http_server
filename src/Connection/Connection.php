@@ -59,13 +59,21 @@ class Connection implements ConnectionInterface{
         $this->stream = @stream_socket_accept($this->server->stream, 5, $peername);
         if(!$this->stream) {
             if(is_callable($this->server->onError)) {
-                call_user_func($this->server->onError, $this, "create connection to $peername failed."); exit;
+                try{
+                    call_user_func($this->server->onError, $this, "create connection to $peername failed."); exit;
+                }catch(\Exception $e){
+                    exit($e->getMessage());
+                }
             }
         }
         stream_set_read_buffer($this->stream, 0);
         $this->connected_at = $this->last_recv_time = time();
         if(is_callable($this->server->onConnection)) {
-            call_user_func($this->server->onConnection, $this); 
+            try{
+                call_user_func($this->server->onConnection, $this); 
+            }catch(\Exception $e){
+                echo $e->getMessage();
+            }
         }
     }
 
@@ -140,7 +148,7 @@ class Connection implements ConnectionInterface{
      */
     public function close() {
         $this->server->connections->detach($this);
-        $this->server->loop->delete($this->stream, EventInterface::EV_READ);
+        $this->server->loop->delete($this->stream, EventLoopInterface::EV_READ);
         fclose($this->stream);
     }
 

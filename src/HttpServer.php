@@ -24,6 +24,7 @@ class HttpServer extends WorkerServer {
      */
     public $hosts = array();
 
+    
     protected $mimes = [
         'js' => 'application/javascript',
         'json' => 'application/json',

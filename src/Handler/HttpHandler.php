@@ -9,6 +9,7 @@ use shs\Protocol\HttpProtocol;
 
 class HttpHandler {
 
+
     public function handleMessage(ConnectionInterface $connection) {
         
         $buffer = fread($connection->stream, $connection->recv_buffer_size);
@@ -24,12 +25,6 @@ class HttpHandler {
                 $connection->current_package_size = 0;
                 $http_message = $protocol::decode($buffer, $connection);
                 
-                /**
-                 *         if(is_callable($this->server->onMessage)) {
-                 *              call_user_func($this->server->onMessage, $this); 
-                 *          }
-                 */
-
                 if($http_message['connection'] == 'close') {
                     $connection->timeout = time();
                 } else {
@@ -75,6 +70,14 @@ class HttpHandler {
                         break;
                     default:
                         (new HttpCodeResponder($connection, $http_message))->sendCodeResp('405');
+                }
+                
+                if(is_callable($connection->server->onMessage)) {
+                    try{
+                        call_user_func($connection->server->onMessage, $connection, $http_message); 
+                    }catch(\Exception $e){
+                        echo $e->getMessage();
+                    }
                 }
 
 //                if (!empty($connection->recv_buffer)) {
