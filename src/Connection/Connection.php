@@ -64,6 +64,9 @@ class Connection implements ConnectionInterface{
         }
         stream_set_read_buffer($this->stream, 0);
         $this->connected_at = $this->last_recv_time = time();
+        if(is_callable($this->server->onConnection)) {
+            call_user_func($this->server->onConnection, $this); 
+        }
     }
 
     /**

@@ -15,6 +15,7 @@ class Worker {
     public $onMessage;
     public $onClose;
     public $onError;
+    
     public $connections;
 
     /**

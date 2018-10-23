@@ -14,7 +14,9 @@ class FileResponder extends AbstractResponder {
         }
 
         $uri = $message['Uri'];
+        // b.php?aa=11
         @list($request_file, $query_string) = explode('?', $uri);
+
         $request_file = rtrim($host_config['root'], '/').'/'.ltrim($request_file, '/.');
 
         if(!file_exists($request_file)) {

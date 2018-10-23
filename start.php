@@ -7,6 +7,10 @@ $http = new shs\HttpServer('127.0.0.1', 8899);
 $http->count = 1;
 // 以守护进程启动
 $http->deamon = false;
+$http->onConnection = function($conn, $data){
+    print_r($conn);
+};
+
 // 虚拟主机
 $http->hosts = array(
     'default' => [
