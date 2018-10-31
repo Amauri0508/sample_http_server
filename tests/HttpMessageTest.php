@@ -1,5 +1,4 @@
 <?php
-include "../vendor/autoload.php";
 use shs\Protocol\HttpMessage;
 use PHPUnit\Framework\TestCase;
 class HttpMessageTest extends TestCase{

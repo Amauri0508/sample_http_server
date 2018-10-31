@@ -6,31 +6,34 @@ use shs\SharedMemory\SharedMemory;
 
 class SharedMemoryTest extends TestCase {
 
-    protected $sm;
+    protected $shm;
     
     public function setUp() {
         $key = ftok(__FILE__, substr(__FILE__, strlen(__FILE__)-1));
-        $this->sm = new SharedMemory($key);
+        $this->shm = new SharedMemory($key);
     }
     
     public function testTransaction() {
-        $this->sm->set('counter', 0);
+        $this->shm->set('test', 0);
         $pid = pcntl_fork();
         if($pid == 0) {
+            //子进程自增 key -> 'test'
             for($i = 0; $i < 10000; $i++) {
-                $this->sm->increment('counter');
+                $this->shm->increment('test');
             }
         } else if($pid > 0) {
+            //父进程自增 key -> 'test'
             for($i = 0; $i < 10000; $i++) {
-                $this->sm->increment('counter');
+                $this->shm->increment('test');
             }
             pcntl_wait($status);
-            $this->assertEqual($this->sm->get('counter'), 20000);
+            $this->assertEquals($this->shm->get('test'), 20000);
         } else {
             exit('pnctl_fork() failed');
         }
     }
+
     public function tearDown() {
-        $this->sm->remove();
+        $this->shm->remove();
     }
 }
