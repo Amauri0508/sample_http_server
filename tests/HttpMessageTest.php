@@ -21,7 +21,6 @@ class HttpMessageTest extends TestCase{
 
         $this->assertEquals($httpMsg->body("defg"), "defg");
 
-
         $this->assertEquals($httpMsg["Code"], 400);
 
         $httpMsg["Code"] = 500;
